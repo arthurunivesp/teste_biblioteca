@@ -22,11 +22,11 @@ function carregarDadosDoLocalStorageOuMock() {
         livros = JSON.parse(livrosSalvos);
     } else {
         livros = [
-            { id: 1, isbn: "978-8535902778", titulo: "O Senhor dos Anéis", autor: "J.R.R. Tolkien", resumo: "Uma jornada épica para destruir um anel maligno e salvar a Terra Média.", capa: "https://m.media-amazon.com/images/I/71jQ1z563pL._AC_UF1000,1000_QL80_.jpg", genero: "Fantasia", status: "disponivel" },
-            { id: 2, isbn: "978-8535900277", titulo: "1984", autor: "George Orwell", resumo: "Em um futuro distópico, a vigilância onipresente e a manipulação da verdade controlam a sociedade.", capa: "https://m.media-amazon.com/images/I/71+h2bB+B2L._AC_UF1000,1000_QL80_.jpg", genero: "Distopia", status: "emprestado" },
-            { id: 3, isbn: "978-8535900284", titulo: "Orgulho e Preconceito", autor: "Jane Austen", resumo: "A história de amor e mal-entendidos entre Elizabeth Bennet e o Sr. Darcy na Inglaterra do século XIX.", capa: "https://m.media-amazon.com/images/I/81B436v4NGL._AC_UF1000,1000_QL80_.jpg", genero: "Romance", status: "disponivel" },
-            { id: 4, isbn: "978-8535900291", titulo: "Duna", autor: "Frank Herbert", resumo: "Em um futuro distante, a luta pelo controle de um planeta desértico, única fonte de uma especiaria vital.", capa: "https://m.media-amazon.com/images/I/71u9t2K6QeL._AC_UF1000,1000_QL80_.jpg", genero: "Ficção Científica", status: "disponivel" },
-            { id: 5, isbn: "978-8535900307", titulo: "Dom Quixote", autor: "Miguel de Cervantes", resumo: "Um fidalgo que enlouquece lendo romances de cavalaria e decide se tornar um cavaleiro andante.", capa: "https://m.media-amazon.com/images/I/61K5661Xv-L._AC_UF1000,1000_QL80_.jpg", genero: "Clássico", status: "disponivel" },
+            { id: 1, isbn: "978-8535902778", titulo: "O Senhor dos Anéis", autor: "J.R.R. Tolkien", resumo: "Uma jornada épica para destruir um anel maligno e salvar a Terra Média.", capa: "https://m.media-amazon.com/images/I/71jQ1z563pL._AC_UF1000,1000_QL80_.jpg", genero: "Fantasia", status: "disponivel", emprestimo: null },
+            { id: 2, isbn: "978-8535900277", titulo: "1984", autor: "George Orwell", resumo: "Em um futuro distópico, a vigilância onipresente e a manipulação da verdade controlam a sociedade.", capa: "https://m.media-amazon.com/images/I/71+h2bB+B2L._AC_UF1000,1000_QL80_.jpg", genero: "Distopia", status: "emprestado", emprestimo: { nomeAluno: "João Silva", serieAluno: "8º Ano A", tutorAluno: "Maria Silva", dataEmprestimo: "2024-05-01", dataDevolucaoPrevista: "2024-05-15", dataDevolucaoReal: null } },
+            { id: 3, isbn: "978-8535900284", titulo: "Orgulho e Preconceito", autor: "Jane Austen", resumo: "A história de amor e mal-entendidos entre Elizabeth Bennet e o Sr. Darcy na Inglaterra do século XIX.", capa: "https://m.media-amazon.com/images/I/81B436v4NGL._AC_UF1000,1000_QL80_.jpg", genero: "Romance", status: "disponivel", emprestimo: null },
+            { id: 4, isbn: "978-8535900291", titulo: "Duna", autor: "Frank Herbert", resumo: "Em um futuro distante, a luta pelo controle de um planeta desértico, única fonte de uma especiaria vital.", capa: "https://m.media-amazon.com/images/I/71u9t2K6QeL._AC_UF1000,1000_QL80_.jpg", genero: "Ficção Científica", status: "disponivel", emprestimo: null },
+            { id: 5, isbn: "978-8535900307", titulo: "Dom Quixote", autor: "Miguel de Cervantes", resumo: "Um fidalgo que enlouquece lendo romances de cavalaria e decide se tornar um cavaleiro andante.", capa: "https://m.media-amazon.com/images/I/61K5661Xv-L._AC_UF1000,1000_QL80_.jpg", genero: "Clássico", status: "disponivel", emprestimo: null },
         ];
     }
 
@@ -124,7 +124,7 @@ function preencherSelectGeneros() {
     const generosUnicos = [...new Set(generos.filter(g => g && g.trim() !== ''))].sort();
 
     generosUnicos.forEach(genero => {
-        if (genero === '__novo__') return;
+        if (genero === '__novo__') return; // Evita duplicar a opção "Adicionar Novo Gênero"
         const option = document.createElement('option');
         option.value = genero;
         option.textContent = genero;
@@ -356,7 +356,8 @@ function adicionarLivro() {
             resumo,
             capa: url,
             genero: generoFinal,
-            status: 'disponivel'
+            status: 'disponivel',
+            emprestimo: null // Novo campo para dados de empréstimo
         };
         livros.push(novoLivro);
         salvarDadosNoLocalStorage();
@@ -401,7 +402,7 @@ function encontrarLivro(termoBusca) {
     const termoLower = termoBusca.toLowerCase();
 
     // Tenta encontrar por ID (numérico)
-    if (!isNaN(parseInt(termoBusca))) {
+    if (!isNaN(parseInt(termoBusca)) && termoBusca.trim() !== '') { // Adicionado verificação para termoBusca não ser vazio
         const livroPorId = livros.find(l => l.id === parseInt(termoBusca));
         if (livroPorId) return livroPorId;
     }
@@ -421,47 +422,91 @@ function encontrarLivro(termoBusca) {
 }
 
 /**
- * Gerencia o empréstimo ou devolução de um livro.
- * @param {'emprestar'|'devolver'} acao - A ação a ser realizada.
+ * Função dedicada para registrar o empréstimo de um livro.
+ * Chamada pelo submit do formulário formEmprestimoLivro.
+ */
+document.getElementById('formEmprestimoLivro').addEventListener('submit', function(event) {
+    event.preventDefault(); // Impede o envio padrão do formulário
+
+    const idLivroEmprestimo = document.getElementById('inputEmprestar').value.trim();
+    const nomeAluno = document.getElementById('nomeAlunoEmprestimo').value.trim();
+    const serieAluno = document.getElementById('serieAlunoEmprestimo').value.trim();
+    const tutorAluno = document.getElementById('tutorAlunoEmprestimo').value.trim();
+    const dataEmprestimo = document.getElementById('dataEmprestimo').value;
+    const dataDevolucaoPrevista = document.getElementById('dataDevolucaoPrevista').value;
+
+    if (!idLivroEmprestimo || !nomeAluno || !serieAluno || !tutorAluno || !dataEmprestimo || !dataDevolucaoPrevista) {
+        alert('Por favor, preencha todos os campos do formulário de empréstimo.');
+        return;
+    }
+
+    let livroEncontrado = encontrarLivro(idLivroEmprestimo);
+
+    if (livroEncontrado) {
+        if (livroEncontrado.status === 'disponivel') {
+            livroEncontrado.status = 'emprestado';
+            livroEncontrado.emprestimo = {
+                nomeAluno: nomeAluno,
+                serieAluno: serieAluno,
+                tutorAluno: tutorAluno,
+                dataEmprestimo: dataEmprestimo,
+                dataDevolucaoPrevista: dataDevolucaoPrevista,
+                dataDevolucaoReal: null // Campo para ser preenchido na devolução
+            };
+            salvarDadosNoLocalStorage();
+            alert(`Livro "${livroEncontrado.titulo}" emprestado para ${nomeAluno} da série ${serieAluno}. Tutor: ${tutorAluno}.`);
+            // Limpa o formulário de empréstimo
+            document.getElementById('formEmprestimoLivro').reset();
+            // Opcional: Atualizar a lista de livros no painel de gestão se a pesquisa estiver ativa
+            const inputPesquisaAdmin = document.getElementById('inputPesquisaLivro');
+            if (inputPesquisaAdmin && inputPesquisaAdmin.value.trim()) {
+                pesquisarLivroAdmin();
+            }
+        } else {
+            alert(`O livro "${livroEncontrado.titulo}" (ISBN: ${livroEncontrado.isbn || livroEncontrado.id}) já está emprestado.`);
+        }
+    } else {
+        alert('Livro não encontrado para empréstimo. Verifique o ISBN, ID ou Título.');
+    }
+});
+
+
+/**
+ * Função dedicada para gerenciar a devolução de um livro.
+ * Chamada pelo botão de devolução.
  */
 function gerenciarEmprestimoDevolucao(acao) {
-    const inputId = (acao === 'emprestar') ? 'inputEmprestar' : 'inputDevolver';
-    const termoBusca = document.getElementById(inputId).value.trim();
+    if (acao === 'devolver') {
+        const idLivroDevolucao = document.getElementById('inputDevolver').value.trim();
 
-    if (!termoBusca) {
-        alert(`Por favor, digite o ISBN, ID ou Título do livro para ${acao}.`);
-        return;
-    }
+        if (!idLivroDevolucao) {
+            alert('Por favor, digite o ISBN, ID ou Título do livro para devolução.');
+            return;
+        }
 
-    const livro = encontrarLivro(termoBusca);
+        let livroEncontrado = encontrarLivro(idLivroDevolucao);
 
-    if (!livro) {
-        alert(`Livro com "${termoBusca}" não encontrado.`);
-        return;
-    }
-
-    const novoStatus = (acao === 'emprestar') ? 'emprestado' : 'disponivel';
-    const statusAtual = livro.status;
-
-    if (acao === 'emprestar' && statusAtual === 'emprestado') {
-        alert(`O livro "${livro.titulo}" já está emprestado.`);
-        return;
-    }
-    if (acao === 'devolver' && statusAtual === 'disponivel') {
-        alert(`O livro "${livro.titulo}" já está disponível.`);
-        return;
-    }
-
-    livro.status = novoStatus;
-    salvarDadosNoLocalStorage();
-    alert(`Livro "${livro.titulo}" (ID: ${livro.id}) agora está ${novoStatus === 'disponivel' ? 'Disponível' : 'Emprestado'}.`);
-
-    // Limpar o input e, se houver pesquisa, re-exibir o resultado
-    document.getElementById(inputId).value = '';
-    // Se a pesquisa estiver ativa, re-pesquisa para atualizar o status
-    const inputPesquisaAdmin = document.getElementById('inputPesquisaLivro');
-    if (inputPesquisaAdmin && inputPesquisaAdmin.value.trim()) {
-        pesquisarLivroAdmin();
+        if (livroEncontrado) {
+            if (livroEncontrado.status === 'emprestado') {
+                livroEncontrado.status = 'disponivel';
+                // Registrar a data de devolução real
+                if (livroEncontrado.emprestimo) {
+                    livroEncontrado.emprestimo.dataDevolucaoReal = new Date().toISOString().split('T')[0];
+                }
+                salvarDadosNoLocalStorage();
+                alert(`Livro "${livroEncontrado.titulo}" devolvido com sucesso.`);
+                document.getElementById('inputDevolver').value = '';
+                // Opcional: Atualizar a lista de livros no painel de gestão se a pesquisa estiver ativa
+                const inputPesquisaAdmin = document.getElementById('inputPesquisaLivro');
+                if (inputPesquisaAdmin && inputPesquisaAdmin.value.trim()) {
+                    pesquisarLivroAdmin();
+                }
+            } else {
+                alert(`O livro "${livroEncontrado.titulo}" já está disponível e não pode ser devolvido.`);
+            }
+        } else {
+            alert('Livro não encontrado para devolução. Verifique o ISBN, ID ou Título.');
+        }
     }
 }
 
@@ -488,6 +533,18 @@ function pesquisarLivroAdmin() {
 
     if (resultados.length > 0) {
         resultados.forEach(livroEncontrado => {
+            let infoEmprestimo = '';
+            if (livroEncontrado.status === 'emprestado' && livroEncontrado.emprestimo) {
+                infoEmprestimo = `
+                    <p class="mb-0"><strong>Emprestado para:</strong> ${livroEncontrado.emprestimo.nomeAluno}</p>
+                    <p class="mb-0"><strong>Série:</strong> ${livroEncontrado.emprestimo.serieAluno}</p>
+                    <p class="mb-0"><strong>Tutor:</strong> ${livroEncontrado.emprestimo.tutorAluno}</p>
+                    <p class="mb-0"><strong>Data Empréstimo:</strong> ${livroEncontrado.emprestimo.dataEmprestimo}</p>
+                    <p class="mb-0"><strong>Devolução Prevista:</strong> ${livroEncontrado.emprestimo.dataDevolucaoPrevista}</p>
+                    ${livroEncontrado.emprestimo.dataDevolucaoReal ? `<p class="mb-0"><strong>Devolução Real:</strong> ${livroEncontrado.emprestimo.dataDevolucaoReal}</p>` : ''}
+                `;
+            }
+
             resultadoDiv.innerHTML += `
                 <div class="livro-card-admin d-flex flex-column align-items-center p-3 border rounded shadow-sm mb-3">
                     <img src="${livroEncontrado.capa || 'https://via.placeholder.com/120x180?text=Sem+Capa'}" alt="Capa do livro ${livroEncontrado.titulo}" style="max-width: 100px; height: auto;">
@@ -496,6 +553,7 @@ function pesquisarLivroAdmin() {
                     <p><strong>Resumo:</strong> ${livroEncontrado.resumo || 'N/A'}</p>
                     <p>ISBN: ${livroEncontrado.isbn || 'N/A'}</p>
                     <p class="status-${livroEncontrado.status}">Status: ${livroEncontrado.status === 'disponivel' ? 'Disponível' : 'Emprestado'}</p>
+                    ${infoEmprestimo}
                     <div class="mt-2">
                         <button class="btn btn-sm btn-warning me-2" onclick="abrirModalEditarLivro(${livroEncontrado.id})">Editar</button>
                         <button class="btn btn-sm btn-danger" onclick="excluirLivro(${livroEncontrado.id})">Excluir</button>
@@ -649,4 +707,3 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
-

@@ -46,7 +46,12 @@
                 <form id="formAdicionarLivro" onsubmit="event.preventDefault(); adicionarLivro();">
                     <div class="mb-3">
                         <label for="livroISBN" class="form-label">ISBN</label>
-                        <input type="text" class="form-control" id="livroISBN" placeholder="Ex: 978-8535902778">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="livroISBN" placeholder="Ex: 978-8535902778">
+                            <button class="btn btn-outline-secondary" type="button" onclick="activateScannerMode('livroISBN')">
+                                <i class="bi bi-upc-scan"></i> Scanear
+                            </button>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label for="tituloLivro" class="form-label">Título</label>
@@ -81,17 +86,47 @@
             <div class="row mb-4">
                 <div class="col-md-6">
                     <h4>Empréstimo de Livro</h4>
-                    <div class="input-group mb-3">
-                        <input type="text" class="form-control" id="inputEmprestar" placeholder="ISBN ou Título do Livro">
-                        <button class="btn btn-primary" type="button" onclick="gerenciarEmprestimoDevolucao('emprestar')">Emprestar Livro</button>
-                    </div>
+                    <form id="formEmprestimoLivro" onsubmit="event.preventDefault(); "> <div class="mb-3">
+                            <label for="inputEmprestar" class="form-label">ISBN ou Título do Livro:</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="inputEmprestar" placeholder="ISBN ou Título do Livro" required>
+                                <button class="btn btn-outline-secondary" type="button" onclick="activateScannerMode('inputEmprestar')">
+                                    <i class="bi bi-upc-scan"></i> Scanear Livro
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="nomeAlunoEmprestimo" class="form-label">Nome Completo do Aluno:</label>
+                            <input type="text" class="form-control" id="nomeAlunoEmprestimo" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="serieAlunoEmprestimo" class="form-label">Série do Aluno:</label>
+                            <input type="text" class="form-control" id="serieAlunoEmprestimo" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tutorAlunoEmprestimo" class="form-label">Nome do Tutor do Aluno:</label>
+                            <input type="text" class="form-control" id="tutorAlunoEmprestimo" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="dataEmprestimo" class="form-label">Data de Empréstimo:</label>
+                            <input type="date" class="form-control" id="dataEmprestimo" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="dataDevolucaoPrevista" class="form-label">Data de Devolução Prevista:</label>
+                            <input type="date" class="form-control" id="dataDevolucaoPrevista" required>
+                        </div>
+                        <button type="submit" class="btn btn-success">Registrar Empréstimo</button>
+                    </form>
                 </div>
                 <div class="col-md-6">
                     <h4>Devolução de Livro</h4>
                     <div class="input-group mb-3">
                         <input type="text" class="form-control" id="inputDevolver" placeholder="ISBN ou Título do Livro">
-                        <button class="btn btn-info" type="button" onclick="gerenciarEmprestimoDevolucao('devolver')">Devolver Livro</button>
+                        <button class="btn btn-outline-secondary" type="button" onclick="activateScannerMode('inputDevolver')">
+                            <i class="bi bi-upc-scan"></i> Scanear Livro
+                        </button>
                     </div>
+                     <button class="btn btn-info" type="button" onclick="gerenciarEmprestimoDevolucao('devolver')">Devolver Livro</button>
                 </div>
             </div>
 
@@ -152,7 +187,7 @@
                             <option value="Garamond, serif">Garamond</option>
                             <option value="cursive">Cursive (Genérica)</option>
                             <option value="fantasy">Fantasy (Genérica)</option>
-                            </select>
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label for="bannerTextSize" class="form-label">Tamanho do Texto</label>
@@ -204,7 +239,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/script.js"></script>
+    <script src="js/scanner.js"></script>
 </body>
 </html>
-
 
